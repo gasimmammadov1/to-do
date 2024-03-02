@@ -1,0 +1,105 @@
+<main class="main">
+    <div class="task-form">
+        <form method="POST" action="/">
+            <input class="input" type="text" name="task" placeholder="I need to...">
+            <button class="task-form__button button" type="submit">Create</button>
+        </form>
+
+        <div class="alert alert--error" style="display: none"> <!--seyfe acilan kimi display olmuyacaq, tekce lazim olanda gornecek-->
+            Minimal length for task name is 3 letters! <!-- 3 herfden az yazanda ekrana cixan errorun metni -->
+        </div> 
+        
+
+        <div class="alert alert--success" style="display: none">
+            Task was added! <!-- ugurlu sekilde task elave edende cixan metn -->
+        </div>
+    </div>
+
+    <h2>Todo List</h2>
+
+    <% if (tasks.length === 0) { %>
+        <h3 class="no-tasks">There are no tasks.</h3>
+    <% } else { %>
+        <ul class="list">
+            <% tasks.forEach(function(task) { %>
+                <li class="list__item">
+                    <div class="checkbox"></div>
+                    <span class="list__item-text"><%= task %></span>
+                </li>
+            <% }); %>
+        </ul>
+    <% } %>
+    
+
+</main>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+<script>
+    $(document).ready(function() {
+        $('.task-form').submit(function(event) {
+            event.preventDefault();
+
+            const task = $('.task-form input[name="task"]').val();
+
+            if (task.trim().length < 3) {
+                $('.alert--error').show().delay(2000).fadeOut(); // 3 herfden az task create edende 2 saniye gorunecek text
+                 return;
+        }
+
+            $('.alert--error').hide();
+
+            $.ajax({
+                url: '/',
+                type: 'POST',
+                data: { task: task },
+
+                success: function(response) {
+                    $('.alert--success').show().delay(2000).fadeOut(); // ugurlu task create edende 2 saniye gorunecek text 
+
+                    if ($('.list').length === 0) {
+                        $('.no-tasks').hide();
+                        $('.main').append('<ul class="list"></ul>');
+                    }
+
+                    const listItem = $('<li class="list__item"></li>');
+                    const checkbox = $('<div class="checkbox"></div>');
+                    const taskText = $('<span class="list__item-text"></span>').text(task);
+                    listItem.append(checkbox).append(taskText);
+
+                    $('.list').prepend(listItem); // prepend yeni taski uste gosderir. apend ise altda
+
+                    $('.task-form input[name="task"]').val('');
+                },
+
+                error: function() {
+                    alert('An unexpected error occurred!');
+                }
+            });
+        });
+
+        $(document).on('click', '.checkbox', function() {
+            $(this).addClass('checkbox--checked');
+            $(this).html(`
+                <svg width="18px" height="18px" viewBox="0 0 18 18" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                    <g stroke="none" stroke-width="1" fill-rule="evenodd">
+                        <polygon id="icon" fill="white" points="7.13636364 11.9104478 4.03409091 8.7761194 3 9.82089552 7.13636364 14 16 5.04477612 14.9659091 4"></polygon>
+                    </g>
+                </svg>`
+            );
+
+            const task = $(this).next('.list__item-text').text();
+
+            $.ajax({
+                url: '/done',
+                type: 'POST',
+                data: { task: task },
+                success: function() {
+                    $(this).parent().remove();
+                },
+                error: function() {
+                    alert('An unexpected error occurred!');
+                }
+            });
+        });
+    });
+</script>
